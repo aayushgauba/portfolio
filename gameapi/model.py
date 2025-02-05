@@ -16,9 +16,9 @@ class QuantumMultiHeadAttentionFunction(torch.autograd.Function):
         ctx.head_dim = head_dim
 
         outs = []
-        for sample in x_np:  # shape: (n_heads, head_dim)
+        for sample in x_np:  # sample shape: (n_heads, head_dim)
             out_vals = _run_multihead_qiskit_circuit(theta_np, sample)
-            outs.append(out_vals)  # shape: (n_heads,)
+            outs.append(out_vals)  # each out_vals: (n_heads,)
         outs = np.stack(outs)  # shape: (batch_size, n_heads)
         return torch.tensor(outs, device=theta.device, dtype=torch.float32).unsqueeze(-1)
 
@@ -53,12 +53,12 @@ class QuantumMultiHeadAttentionFunction(torch.autograd.Function):
 
 def _run_multihead_qiskit_circuit(theta_vals, sample):
     n_heads, head_dim = sample.shape
-    n_qubits = n_heads * head_dim
+    n_qubits = n_heads * head_dim  # For 2 qubits: 2 * 1 = 2
     qc = QuantumCircuit(n_qubits)
     flat_data = sample.reshape(-1)
     for i, val in enumerate(flat_data):
         qc.ry(val, i)
-    required = n_qubits * 3
+    required = n_qubits * 3  # 3 parameters per qubit: RZ, RY, RZ.
     if len(theta_vals) < required:
         raise ValueError("Insufficient theta parameters for circuit design")
     idx = 0
@@ -89,22 +89,26 @@ def _z_exp_qubit(statevector, qubit_idx, total_qubits):
     return exp_z
 
 class QuantumDifficultyAdjuster(nn.Module):
-    def __init__(self, n_heads=2, head_dim=2, num_classes=3):
+    def __init__(self, n_heads=2, head_dim=1, num_classes=3):
+        """
+        Quantum-inspired difficulty adjuster using 2 qubits.
+        Expects a 2-dimensional input (batch_size, 2) and outputs logits for 3 classes.
+        """
         super(QuantumDifficultyAdjuster, self).__init__()
         self.n_heads = n_heads
         self.head_dim = head_dim
         self.num_classes = num_classes
-        n_qubits = n_heads * head_dim  # Should be 4 for our 4-dim input (e.g., n_heads=2, head_dim=2)
+        n_qubits = n_heads * head_dim  # 2 * 1 = 2
         self.n_params = n_qubits * 3
         self.theta = nn.Parameter(0.1 * torch.randn(self.n_params))
-        # A simple linear layer mapping the quantum measurement (per head) to class logits.
+        # A simple linear layer mapping the quantum measurements (one per head) to class logits.
         self.fc = nn.Linear(n_heads, num_classes)
 
     def forward(self, x):
-        # x: (batch_size, 4)
+        # x: (batch_size, 2)
         bsz = x.shape[0]
         x_reshaped = x.view(bsz, self.n_heads, self.head_dim)
         q_out = QuantumMultiHeadAttentionFunction.apply(self.theta, x_reshaped, self.n_heads, self.head_dim)
-        q_out = q_out.squeeze(-1)  # (bsz, n_heads)
-        logits = self.fc(q_out)    # (bsz, num_classes)
+        q_out = q_out.squeeze(-1)  # shape: (batch_size, n_heads)
+        logits = self.fc(q_out)    # shape: (batch_size, num_classes)
         return logits
