@@ -2,9 +2,9 @@
 import torch
 import os
 from .model import QuantumDifficultyAdjuster
-
-MODEL_SAVE_PATH = os.path.join('trained_models', 'q_difficulty_adjuster_complex_2qubits.pth')
-
+from django.conf import settings
+MODEL_FILENAME = "q_difficulty_adjuster_complex_2qubits.pth"
+MODEL_SAVE_PATH = os.path.join(settings.BASE_DIR, "trained_models", MODEL_FILENAME)
 def load_trained_model():
     model = QuantumDifficultyAdjuster(n_heads=2, head_dim=1, num_classes=3)
     if os.path.exists(MODEL_SAVE_PATH):
