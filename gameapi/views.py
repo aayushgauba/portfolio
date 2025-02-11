@@ -1,11 +1,39 @@
-# gameapi/views.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.conf import settings
-from .serializers import GamePerformanceSerializer
-from .models import GamePerformance, GameSession
+from .serializers import (
+    GamePerformanceSerializer,
+    RoomSerializer,
+    RoomPlayerSerializer
+)
+from .models import GamePerformance, GameSession, Room, RoomPlayer
 from .prediction import predict_difficulty_from_model
+import random
+
+def validate_session(request):
+    """
+    Validates that a valid session_id and token are provided in the request.
+    Returns a tuple: (session, error_response) where error_response is None if valid.
+    """
+    session_id = request.data.get("session_id") or request.query_params.get("session_id")
+    if not session_id:
+        return None, Response({"detail": "Missing session_id."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        session = GameSession.objects.get(pk=session_id)
+    except GameSession.DoesNotExist:
+        return None, Response({"detail": "Invalid session_id."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None, Response({"detail": "Authorization header missing or malformed."},
+                              status=status.HTTP_401_UNAUTHORIZED)
+    token = auth_header.split(" ")[1]
+    if token != session.token:
+        return None, Response({"detail": "Invalid token for this session."},
+                              status=status.HTTP_403_FORBIDDEN)
+    return session, None
 
 class GameSessionCreateView(APIView):
     """
@@ -16,34 +44,126 @@ class GameSessionCreateView(APIView):
         session = GameSession.objects.create()
         return Response({"session_id": session.pk, "token": session.token}, status=status.HTTP_201_CREATED)
 
-# gameapi/views.py
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.conf import settings
-from .serializers import GamePerformanceSerializer
-from .models import GamePerformance, GameSession  # Make sure GameSession is defined in your models
-from .prediction import predict_difficulty_from_model
+class RoomPlayersView(APIView):
+    """
+    Retrieves the list of players in a room and the room’s game_started status.
+    Expects query parameters: room=<room_id>&session_id=<session_id>
+    """
+    def get(self, request, *args, **kwargs):
+        session, error_response = validate_session(request)
+        if error_response:
+            return error_response
+
+        room_id = request.query_params.get("room")
+        if not room_id:
+            return Response({"detail": "Missing room parameter."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            room = Room.objects.get(pk=room_id)
+        except Room.DoesNotExist:
+            return Response({"detail": "Room not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        players = RoomPlayer.objects.filter(room=room)
+        players_data = RoomPlayerSerializer(players, many=True).data
+        data = {
+            "id": room.pk,
+            "game_started": room.game_started,
+            "players": players_data
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+class CreateRoomView(APIView):
+    """
+    Creates a new Room.
+    Requires a valid session (via session_id and token).
+    The Room’s primary key is set to a random 10-digit number.
+    """
+    def post(self, request, *args, **kwargs):
+        session, error_response = validate_session(request)
+        if error_response:
+            return error_response
+
+        # Create a 10-digit random room ID.
+        room_id = random.randint(10**9, 10**10 - 1)
+        room = Room.objects.create(id=room_id)
+        serializer = RoomSerializer(room)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class CreateRoomPlayerView(APIView):
+    """
+    Creates (joins) a player into a room.
+    Expected payload:
+      {
+          "session_id": "<session_id>",
+          "room": "<room_id>",
+          "player_name": "<display name>"
+      }
+    """
+    def post(self, request, *args, **kwargs):
+        session, error_response = validate_session(request)
+        if error_response:
+            return error_response
+        
+        serializer = RoomPlayerSerializer(data=request.data)
+        if serializer.is_valid():
+            player = serializer.save()
+            return Response(RoomPlayerSerializer(player).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class RoomStartView(APIView):
+    """
+    API endpoint for the room leader to start the game.
+    Only the room leader (assumed to be the first RoomPlayer created in the room)
+    may start the game.
+    Expected payload:
+      {
+          "session_id": "<session_id>",
+          "room": "<room_id>",
+          "player_id": "<player_id>"  // The ID of the player attempting to start the game
+      }
+    """
+    def post(self, request, *args, **kwargs):
+        session, error_response = validate_session(request)
+        if error_response:
+            return error_response
+        
+        room_id = request.data.get("room")
+        if not room_id:
+            return Response({"detail": "Missing room parameter."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            room = Room.objects.get(pk=room_id)
+        except Room.DoesNotExist:
+            return Response({"detail": "Room not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Retrieve all players in the room, ordered by creation time.
+        players = RoomPlayer.objects.filter(room=room).order_by("created_at")
+        if not players.exists():
+            return Response({"detail": "No players in room."}, status=status.HTTP_400_BAD_REQUEST)
+        leader = players.first()
+        
+        player_id = request.data.get("player_id")
+        if not player_id:
+            return Response({"detail": "Missing player_id."}, status=status.HTTP_400_BAD_REQUEST)
+        if str(leader.pk) != str(player_id):
+            return Response({"detail": "Only the room leader can start the game."}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Mark the room as started.
+        room.game_started = True
+        room.save()
+        return Response({"detail": "Game started."}, status=status.HTTP_200_OK)
 
 class GamePredictionView(APIView):
     """
     Secure API endpoint to predict difficulty based on performance metrics.
     The client sends metrics as query parameters along with a session_id.
-    The session-specific token (in the Authorization header) is validated against the GameSession.
     """
     def get(self, request, *args, **kwargs):
-        # Retrieve session_id from query parameters
         session_id = request.query_params.get("session_id")
         if not session_id:
             return Response({"detail": "Missing session_id."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Retrieve the game session
         try:
             session = GameSession.objects.get(pk=session_id)
         except GameSession.DoesNotExist:
             return Response({"detail": "Invalid session_id."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Validate the token from the Authorization header
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return Response({"detail": "Authorization header missing or malformed."},
@@ -52,8 +172,6 @@ class GamePredictionView(APIView):
         if token != session.token:
             return Response({"detail": "Invalid token for this session."},
                             status=status.HTTP_403_FORBIDDEN)
-
-        # Get performance metrics from query parameters
         try:
             bubbles_caught = int(request.query_params.get("bubbles_caught", 0))
             bubbles_missed = int(request.query_params.get("bubbles_missed", 0))
@@ -62,7 +180,6 @@ class GamePredictionView(APIView):
         except ValueError:
             return Response({"detail": "Invalid query parameter format."},
                             status=status.HTTP_400_BAD_REQUEST)
-
         performance_data = {
             "bubbles_caught": bubbles_caught,
             "bubbles_missed": bubbles_missed,
@@ -72,25 +189,38 @@ class GamePredictionView(APIView):
         predicted_difficulty = predict_difficulty_from_model(performance_data)
         return Response({"predicted_difficulty": predicted_difficulty}, status=status.HTTP_200_OK)
 
-
+class UpdatePlayerInfoView(APIView):
+    """
+    Updates a player's information (e.g. score).
+    The endpoint expects a session_id and token along with the update data.
+    """
+    def put(self, request, pk, *args, **kwargs):
+        session, error_response = validate_session(request)
+        if error_response:
+            return error_response
+        try:
+            player = RoomPlayer.objects.get(pk=pk)
+        except RoomPlayer.DoesNotExist:
+            return Response({"detail": "Player not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = RoomPlayerSerializer(player, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 class GamePerformanceUpdateView(APIView):
     """
     Secure API endpoint to update game performance data.
     The client must provide a valid session_id and token.
     """
     def post(self, request, *args, **kwargs):
-        # Retrieve session_id from request data or query parameters
         session_id = request.data.get("session_id") or request.query_params.get("session_id")
         if not session_id:
             return Response({"detail": "Missing session_id."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Retrieve the game session
         try:
             session = GameSession.objects.get(pk=session_id)
         except GameSession.DoesNotExist:
             return Response({"detail": "Invalid session_id."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Validate the token from the Authorization header
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return Response({"detail": "Authorization header missing or malformed."},
@@ -99,10 +229,9 @@ class GamePerformanceUpdateView(APIView):
         if token != session.token:
             return Response({"detail": "Invalid token for this session."},
                             status=status.HTTP_403_FORBIDDEN)
-
-        # Proceed with updating game performance
         serializer = GamePerformanceSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
