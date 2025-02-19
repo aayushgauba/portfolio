@@ -35,6 +35,53 @@ def validate_session(request):
                               status=status.HTTP_403_FORBIDDEN)
     return session, None
 
+class RoomStartView(APIView):
+    """
+    API endpoint for the room leader to start the game.
+    Only the room leader (the first RoomPlayer who joined the room) may start the game.
+    
+    Expected payload:
+      {
+          "session_id": "<session_id>",
+          "room": "<room_id>",
+          "player_id": "<player_id>"
+      }
+    """
+    def post(self, request, *args, **kwargs):
+        # Validate session and token.
+        session, error_response = validate_session(request)
+        if error_response:
+            return error_response
+
+        # Validate that a room ID was provided.
+        room_id = request.data.get("room")
+        if not room_id:
+            return Response({"detail": "Missing room parameter."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            room = Room.objects.get(pk=room_id)
+        except Room.DoesNotExist:
+            return Response({"detail": "Room not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Retrieve all players in the room, ordered by join time.
+        players = RoomPlayer.objects.filter(room=room).order_by("joined_at")
+        if not players.exists():
+            return Response({"detail": "No players in room."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        leader = players.first()
+        
+        player_id = request.data.get("player_id")
+        if not player_id:
+            return Response({"detail": "Missing player_id."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if str(leader.pk) != str(player_id):
+            return Response({"detail": "Only the room leader can start the game."},
+                            status=status.HTTP_403_FORBIDDEN)
+        
+        # Mark the room as started.
+        room.game_started = True
+        room.save()
+        return Response({"detail": "Game started."}, status=status.HTTP_200_OK)
+
 class GameSessionCreateView(APIView):
     """
     API endpoint to create a new game session.
@@ -109,19 +156,20 @@ class CreateRoomPlayerView(APIView):
             return Response(RoomPlayerSerializer(player).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class RoomStartView(APIView):
     """
     API endpoint for the room leader to start the game.
-    Only the room leader (assumed to be the first RoomPlayer created in the room)
-    may start the game.
+    Only the room leader (the first RoomPlayer created in the room) may start the game.
     Expected payload:
       {
           "session_id": "<session_id>",
           "room": "<room_id>",
-          "player_id": "<player_id>"  // The ID of the player attempting to start the game
+          "player_id": "<player_id>"
       }
     """
     def post(self, request, *args, **kwargs):
+        # Validate the session and token.
         session, error_response = validate_session(request)
         if error_response:
             return error_response
@@ -134,8 +182,8 @@ class RoomStartView(APIView):
         except Room.DoesNotExist:
             return Response({"detail": "Room not found."}, status=status.HTTP_404_NOT_FOUND)
         
-        # Retrieve all players in the room, ordered by creation time.
-        players = RoomPlayer.objects.filter(room=room).order_by("created_at")
+        # Retrieve all players in the room ordered by join time.
+        players = RoomPlayer.objects.filter(room=room).order_by("joined_at")
         if not players.exists():
             return Response({"detail": "No players in room."}, status=status.HTTP_400_BAD_REQUEST)
         leader = players.first()
@@ -143,8 +191,10 @@ class RoomStartView(APIView):
         player_id = request.data.get("player_id")
         if not player_id:
             return Response({"detail": "Missing player_id."}, status=status.HTTP_400_BAD_REQUEST)
+        
         if str(leader.pk) != str(player_id):
-            return Response({"detail": "Only the room leader can start the game."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": "Only the room leader can start the game."},
+                            status=status.HTTP_403_FORBIDDEN)
         
         # Mark the room as started.
         room.game_started = True
