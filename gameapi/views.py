@@ -84,10 +84,6 @@ class GameSessionCreateView(APIView):
         return Response({"session_id": session.pk, "token": session.token}, status=status.HTTP_201_CREATED)
 
 class RoomPlayersView(APIView):
-    """
-    Retrieves the list of players in a room and the room’s game_started status.
-    Expects query parameters: room=<room_id>&session_id=<session_id>
-    """
     def get(self, request, *args, **kwargs):
         session, error_response = validate_session(request)
         if error_response:
@@ -95,20 +91,23 @@ class RoomPlayersView(APIView):
 
         room_id = request.query_params.get("room")
         if not room_id:
-            return Response({"detail": "Missing room parameter."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Missing room parameter."}, status=400)
+
         try:
             room = Room.objects.get(pk=room_id)
         except Room.DoesNotExist:
-            return Response({"detail": "Room not found."}, status=status.HTTP_404_NOT_FOUND)
-        
+            return Response({"detail": "Room not found."}, status=404)
+
         players = RoomPlayer.objects.filter(room=room)
         players_data = RoomPlayerSerializer(players, many=True).data
+
         data = {
             "id": room.pk,
+            "leader_id": room.leader_id,       # <--- return who is the leader
             "game_started": room.game_started,
             "players": players_data
         }
-        return Response(data, status=status.HTTP_200_OK)
+        return Response(data, status=200)
 
 class CreateRoomView(APIView):
     """
