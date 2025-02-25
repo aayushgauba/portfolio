@@ -1,12 +1,7 @@
 from django.db import models
 import secrets
-
 import random
 import uuid
-from django.db import models
-
-import uuid
-from django.db import models
 
 def generate_room_id():
     """
@@ -34,7 +29,10 @@ class Room(models.Model):
         help_text="Indicates whether the room is active"
     )
     game_started = models.BooleanField(default=False)
-
+    leader_id = models.PositiveIntegerField(
+        blank=True, null=True,
+        help_text="Primary key of the RoomPlayer who is the leader."
+    )
     def __str__(self):
         return f"Room {self.id}"
 
@@ -81,7 +79,10 @@ class GamePerformance(models.Model):
     )
     score = models.IntegerField(default=0, help_text="Player's score in the session")
     created_at = models.DateTimeField(auto_now_add=True)
-
+    leader_id = models.PositiveIntegerField(
+            blank=True, null=True,
+            help_text="Primary key of the RoomPlayer who is the leader."
+        )
     def __str__(self):
         return f"{self.player} scored {self.score} in Room {self.room.id} at {self.created_at}"
     

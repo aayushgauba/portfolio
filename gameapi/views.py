@@ -48,12 +48,10 @@ class RoomStartView(APIView):
       }
     """
     def post(self, request, *args, **kwargs):
-        # Validate session and token.
         session, error_response = validate_session(request)
         if error_response:
             return error_response
-
-        # Validate that a room ID was provided.
+        
         room_id = request.data.get("room")
         if not room_id:
             return Response({"detail": "Missing room parameter."}, status=status.HTTP_400_BAD_REQUEST)
@@ -61,23 +59,17 @@ class RoomStartView(APIView):
             room = Room.objects.get(pk=room_id)
         except Room.DoesNotExist:
             return Response({"detail": "Room not found."}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Retrieve all players in the room, ordered by join time.
-        players = RoomPlayer.objects.filter(room=room).order_by("joined_at")
-        if not players.exists():
-            return Response({"detail": "No players in room."}, status=status.HTTP_400_BAD_REQUEST)
-        
-        leader = players.first()
-        
+
         player_id = request.data.get("player_id")
         if not player_id:
             return Response({"detail": "Missing player_id."}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if str(leader.pk) != str(player_id):
-            return Response({"detail": "Only the room leader can start the game."},
+
+        # Check if the caller is the official leader
+        if str(room.leader_id) != str(player_id):
+            return Response({"detail": "Only the designated leader can start the game."},
                             status=status.HTTP_403_FORBIDDEN)
-        
-        # Mark the room as started.
+
+        # Mark the room as started
         room.game_started = True
         room.save()
         return Response({"detail": "Game started."}, status=status.HTTP_200_OK)
@@ -153,6 +145,13 @@ class CreateRoomPlayerView(APIView):
         serializer = RoomPlayerSerializer(data=request.data)
         if serializer.is_valid():
             player = serializer.save()
+            
+            # Now check if the room has no leader yet.
+            room_instance = player.room
+            if room_instance.leader_id is None:
+                room_instance.leader_id = player.id
+                room_instance.save()
+            
             return Response(RoomPlayerSerializer(player).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

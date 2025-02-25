@@ -4,7 +4,7 @@ from .models import GamePerformance, Room, RoomPlayer
 class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
-        fields = ['id', 'created_at', 'is_active']  
+        fields = ['id', 'created_at', 'is_active', 'leader_id']  
         # Adjust the fields as needed (for example, if you have additional fields such as game_started, etc.)
 
 class RoomPlayerSerializer(serializers.ModelSerializer):
