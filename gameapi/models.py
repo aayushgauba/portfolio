@@ -29,7 +29,8 @@ class Room(models.Model):
         help_text="Indicates whether the room is active"
     )
     game_started = models.BooleanField(default=False)
-    leader_id = models.PositiveIntegerField(
+    leader_id = models.CharField(
+        max_length=300,
         blank=True, null=True,
         help_text="Primary key of the RoomPlayer who is the leader."
     )
@@ -79,7 +80,8 @@ class GamePerformance(models.Model):
     )
     score = models.IntegerField(default=0, help_text="Player's score in the session")
     created_at = models.DateTimeField(auto_now_add=True)
-    leader_id = models.PositiveIntegerField(
+    leader_id = models.CharField(
+            max_length=300,
             blank=True, null=True,
             help_text="Primary key of the RoomPlayer who is the leader."
         )
