@@ -4,17 +4,9 @@ import random
 import uuid
 
 def generate_room_id():
-    """
-    Generates a random 10-digit number as a string.
-    For example: "1234567890"
-    """
     return str(random.randint(10**9, 10**10 - 1))
 
 class Room(models.Model):
-    """
-    Represents a multiplayer game room.
-    The primary key is a unique random 10-digit number (as a string).
-    """
     id = models.CharField(
         max_length=10,
         primary_key=True,
@@ -38,9 +30,6 @@ class Room(models.Model):
         return f"Room {self.id}"
 
 class RoomPlayer(models.Model):
-    """
-    Represents a player assigned to a room.
-    """
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -58,14 +47,10 @@ class RoomPlayer(models.Model):
     )
     joined_at = models.DateTimeField(auto_now_add=True)
     score = models.IntegerField(default=0, help_text="Player score")
-
     def __str__(self):
         return f"{self.player_name} in Room {self.room.id}"
 
 class GamePerformance(models.Model):
-    """
-    Records a player's score for a game session in a given room.
-    """
     room = models.ForeignKey(
         Room,
         on_delete=models.CASCADE,
@@ -104,9 +89,6 @@ class GamePerformance(models.Model):
         return f"{self.timestamp} | Score: {self.score}, Level: {self.level}"
 
 class GameSession(models.Model):
-    """
-    Represents a unique game session with its own update token.
-    """
     created = models.DateTimeField(auto_now_add=True)
     token = models.CharField(max_length=100, blank=True, unique=True)
 

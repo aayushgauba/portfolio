@@ -11,7 +11,7 @@ import numpy as np
 # --- Django Environment Setup ---
 # Adjust the path below to point to your Django project directory (where manage.py resides)
 sys.path.append('/home/your_username/portfolio')  # CHANGE this to your actual path
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'portfolio_project.settings')  # CHANGE to your settings module
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gauba.settings')  # CHANGE to your settings module
 django.setup()
 
 # --- Import your Django model ---

@@ -75,10 +75,6 @@ class RoomStartView(APIView):
         return Response({"detail": "Game started."}, status=status.HTTP_200_OK)
 
 class GameSessionCreateView(APIView):
-    """
-    API endpoint to create a new game session.
-    Returns the session ID and unique token.
-    """
     def post(self, request, *args, **kwargs):
         session = GameSession.objects.create()
         return Response({"session_id": session.pk, "token": session.token}, status=status.HTTP_201_CREATED)
@@ -88,22 +84,18 @@ class RoomPlayersView(APIView):
         session, error_response = validate_session(request)
         if error_response:
             return error_response
-
         room_id = request.query_params.get("room")
         if not room_id:
             return Response({"detail": "Missing room parameter."}, status=400)
-
         try:
             room = Room.objects.get(pk=room_id)
         except Room.DoesNotExist:
             return Response({"detail": "Room not found."}, status=404)
-
         players = RoomPlayer.objects.filter(room=room)
         players_data = RoomPlayerSerializer(players, many=True).data
-
         data = {
             "id": room.pk,
-            "leader_id": room.leader_id,       # <--- return who is the leader
+            "leader_id": room.leader_id,       
             "game_started": room.game_started,
             "players": players_data
         }
