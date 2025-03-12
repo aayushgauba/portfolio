@@ -76,6 +76,10 @@ TEMPLATES = [
     },
 ]
 
+STATIC_URL = '/static/' 
+STATICFILES_DIRS = [ BASE_DIR / "static", ] 
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 WSGI_APPLICATION = 'gauba.wsgi.application'
 CORS_ALLOW_ALL_ORIGINS = True
 
