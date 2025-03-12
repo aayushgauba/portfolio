@@ -786,7 +786,7 @@
                 <p class="paper-year">{{paper.year}}</p>
                 <p class="paper-abstract">{{paper.abstract}}</p>
                 <div class="paper-tags">
-                    {% for tech in paper.get_technologies_list %}
+                    {% for tech in paper.get_tags_list %}
                     <span>{{ tech }}</span>
                     {%endfor%}
                 </div>
