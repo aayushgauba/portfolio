@@ -813,20 +813,20 @@
     
     
     <!-- Games Section -->
-    <section id="games" class="games">
+    <section id="games" class="projects">
         <h2 class="section-title">Games I've Built</h2>
         {%if games%}
         {%for game in games%}
-        <div class="game-grid">
-            <div class="game-card animated">
-                <h3 class="game-title">{{game.title}}</h3>
-                <p class="game-description">{{game.description}}</p>
-                <div class="game-tech">
+        <div class="project-grid">
+            <div class="project-card animated">
+                <h3 class="project-title">{{game.title}}</h3>
+                <p class="project-description">{{game.description}}</p>
+                <div class="project-tech">
                     {% for tech in game.get_technologies_list %}
                     <span>{{ tech }}</span>
                     {%endfor%}
                 </div>
-                <div class="game-links">
+                <div class="project-links">
                     {% if game.github_link %}
                     <a href="{{game.github_link}}" aria-label="GitHub Link">GitHub</a>
                     {%endif%}
