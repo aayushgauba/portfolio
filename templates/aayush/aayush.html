@@ -764,8 +764,12 @@
                     {%endfor%}
                 </div>
                 <div class="project-links">
-                    <a href="#" aria-label="GitHub Link">GitHub</a>
-                    <a href="#" aria-label="Live Demo">Demo</a>
+                    {%if project.github_link%}
+                    <a href="{{project.github_link}}" aria-label="GitHub Link">GitHub</a>
+                    {%endif%}
+                    {% if project.demo_link %}
+                    <a href="{{project.demo_link}}" aria-label="Live Demo">Demo</a>
+                    {%endif%}
                 </div>
             </div>
             {%endfor%}
@@ -791,9 +795,15 @@
                     {%endfor%}
                 </div>
                 <div class="paper-links">
-                    <a href="#" aria-label="Download PDF">PDF</a>
-                    <a href="#" aria-label="View Publisher Site">Publisher Site</a>
-                    <a href="#" aria-label="Read Abstract">Abstract</a>
+                    {%if paper.pdf_link%}
+                    <a href="{{paper.pdf_link}}" aria-label="Download PDF">PDF</a>
+                    {%endif%}
+                    {% if paper.publisher_link %}
+                    <a href="{{paper.publisher_link}}" aria-label="View Publisher Site">Publisher Site</a>
+                    {%endif%}
+                    {% if paper.extra_link %}
+                    <a href="{{paper.extra_link}}" aria-label="Read Abstract">Abstract</a>
+                    {%endif%}
                 </div>
             </div>
         {%endfor%}
@@ -817,8 +827,12 @@
                     {%endfor%}
                 </div>
                 <div class="game-links">
-                    <a href="#" aria-label="GitHub Link">GitHub</a>
-                    <a href="#" aria-label="Play Demo">Demo</a>
+                    {% if game.github_link %}
+                    <a href="{{game.github_link}}" aria-label="GitHub Link">GitHub</a>
+                    {%endif%}
+                    {% if game.demo_link %}
+                    <a href="{{game.demo_link}}" aria-label="Play Demo">Demo</a>
+                    {%endif%}
                 </div>
             </div>
             {%endfor%}
