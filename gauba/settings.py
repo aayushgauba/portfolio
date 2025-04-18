@@ -40,9 +40,17 @@ INSTALLED_APPS = [
     'gameapi',
     'corsheaders',
     'aayush',
+    'aiwaf',
 ]
 
+AIWAF_STORAGE = 'db'
+
 MIDDLEWARE = [
+    "aiwaf.middleware.IPBlockMiddleware",
+    "aiwaf.middleware.RateLimitMiddleware",
+    "aiwaf.middleware.AIAnomalyMiddleware",
+    "aiwaf.middleware.HoneypotMiddleware",
+    "aiwaf.middleware.UUIDTamperMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -79,7 +87,7 @@ TEMPLATES = [
 STATIC_URL = '/static/' 
 STATICFILES_DIRS = [ BASE_DIR / "static", ] 
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
+AIWAF_HONEYPOT_FIELD = "hp_field"
 WSGI_APPLICATION = 'gauba.wsgi.application'
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -126,6 +134,7 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+AIWAF_ACCESS_LOG = r"D:\Users\gauba\Downloads\gauba\gauba.org.access.log.txt"
 
 
 # Static files (CSS, JavaScript, Images)
@@ -137,3 +146,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+AIWAF_MALICIOUS_KEYWORDS = [
+    ".php", "xmlrpc", "wp-", ".env", ".git", ".bak", "conflg", "shell", "filemanager"
+]
