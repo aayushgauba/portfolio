@@ -1,6 +1,14 @@
 import uuid
 from django.db import models
 
+class ProfilePhoto(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    image = models.ImageField(upload_to='profile_photos/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"ProfilePhoto {self.id}"
+
 class Project(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=255)
@@ -9,6 +17,7 @@ class Project(models.Model):
     github_link = models.URLField(blank=True, null=True)
     demo_link = models.URLField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    # profile_photo removed as per user request
 
     def get_technologies_list(self):
         """Return technologies as a list"""
@@ -28,6 +37,7 @@ class Paper(models.Model):
     pdf_link = models.URLField(blank=True, null=True)
     publisher_link = models.URLField(blank=True, null=True)
     extra_link = models.URLField(blank=True, null=True)
+    # profile_photo removed as per user request
 
     def get_tags_list(self):
         """Return tags as a list"""

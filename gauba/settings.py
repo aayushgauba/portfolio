@@ -46,7 +46,7 @@ INSTALLED_APPS = [
 AIWAF_STORAGE = 'db'
 
 MIDDLEWARE = [
-    "aiwaf.middleware.IPBlockMiddleware",
+    "aiwaf.middleware.IPAndKeywordBlockMiddleware",
     "aiwaf.middleware.RateLimitMiddleware",
     "aiwaf.middleware.AIAnomalyMiddleware",
     "aiwaf.middleware.HoneypotMiddleware",
