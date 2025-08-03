@@ -1,6 +1,17 @@
 import uuid
 from django.db import models
 
+class Talk(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=255)
+    event = models.CharField(max_length=255)
+    date = models.DateField()
+    description = models.TextField(blank=True)
+    link = models.URLField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.event}, {self.date})"
+
 class ProfilePhoto(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     image = models.ImageField(upload_to='profile_photos/')

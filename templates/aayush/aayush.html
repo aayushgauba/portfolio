@@ -842,6 +842,27 @@
     </section>
 
 
+    <!-- Talks Section -->
+    <section id="talks" class="talks" style="padding: 6rem; background-color: #0a0a0a;">
+        <h2 class="section-title">Talks & Presentations</h2>
+        <div class="talk-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 2rem;">
+        {% if talks %}
+        {% for talk in talks %}
+            <div class="talk-card" style="background-color: #111111; border-radius: 8px; padding: 2rem; transition: transform 0.3s ease, box-shadow 0.3s ease; opacity: 0; transform: translateY(20px); position: relative; overflow: hidden;">
+                <h3 class="talk-title" style="font-size: 1.5rem; margin-bottom: 1rem; color: #ffffff;">{{ talk.title }}</h3>
+                <p class="talk-event" style="color: #ff9e80; font-size: 0.95rem; margin-bottom: 0.5rem;">{{ talk.event }}</p>
+                <p class="talk-date" style="color: #aaaaaa; font-size: 0.85rem; margin-bottom: 1rem;">{{ talk.date }}</p>
+                <p class="talk-description" style="color: #aaaaaa; margin-bottom: 1.5rem; font-size: 0.95rem; line-height: 1.6;">{{ talk.description }}</p>
+                {% if talk.link %}
+                <div class="talk-links">
+                    <a href="{{ talk.link }}" aria-label="Talk Link" style="color: #ffffff; font-size: 0.9rem; text-decoration: none; border: 1px solid #333; border-radius: 4px; padding: 0.3rem 0.6rem; transition: color 0.3s ease;">View Talk</a>
+                </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+        {% endif %}
+        </div>
+    </section>
     <!-- About Section -->
     <section id="about" class="about">
         <h2 class="section-title">About Me</h2>

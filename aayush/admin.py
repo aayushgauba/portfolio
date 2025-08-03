@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Project, Paper, Game, ProfilePhoto
+from .models import Project, Paper, Game, ProfilePhoto, Talk
 
 
 class ProfilePhotoAdmin(admin.ModelAdmin):
@@ -12,3 +12,4 @@ admin.site.register(Project)
 admin.site.register(Paper)
 admin.site.register(Game)
 admin.site.register(ProfilePhoto, ProfilePhotoAdmin)
+admin.site.register(Talk)
