@@ -727,6 +727,70 @@
             border-color: #ff3d00;
         }
 
+        /* Talks section */
+        .talks {
+            padding: 6rem;
+            position: relative;
+            background-color: #0a0a0a;
+        }
+
+        .talk-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 2rem;
+        }
+
+        .talk-card {
+            background-color: #111111;
+            border-radius: 8px;
+            padding: 2rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            opacity: 1;
+            transform: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .talk-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #ffffff;
+        }
+
+        .talk-event {
+            color: #ff9e80;
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .talk-date {
+            color: #aaaaaa;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .talk-description {
+            color: #aaaaaa;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .talk-links a {
+            color: #ffffff;
+            font-size: 0.9rem;
+            text-decoration: none;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 0.3rem 0.6rem;
+            transition: color 0.3s ease;
+        }
+
+        .talk-links a:hover {
+            color: #ff3d00;
+            border-color: #ff3d00;
+        }
+
 </style>
 </head>
 <body>
@@ -859,9 +923,9 @@
                 {% endif %}
             </div>
         {% endfor %}
-        {% endif %}
         </div>
     </section>
+{% endif %}
     <!-- About Section -->
     <section id="about" class="about">
         <h2 class="section-title">About Me</h2>
