@@ -15,12 +15,17 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf.urls.static import static
 from django.conf import settings
+from .views import shortcut_redirect
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('game/', include('gameapi.urls')),
     path('aayush/', include('aayush.urls')),
     path('sarika/', include('sarika.urls')),
+    path('aay/', shortcut_redirect, {"shortcut": "aay"}),
+    path('sar/', shortcut_redirect, {"shortcut": "sar"}),
+    path('', shortcut_redirect),
+    re_path(r'^(?P<path>.*)$', shortcut_redirect),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
