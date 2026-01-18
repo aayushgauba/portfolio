@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'gameapi',
     'corsheaders',
     'aayush',
+    'sarika',
     'aiwaf',
 ]
 
@@ -49,7 +50,6 @@ MIDDLEWARE = [
     "aiwaf.middleware.IPAndKeywordBlockMiddleware",
     "aiwaf.middleware.RateLimitMiddleware",
     "aiwaf.middleware.AIAnomalyMiddleware",
-    "aiwaf.middleware.HoneypotMiddleware",
     "aiwaf.middleware.UUIDTamperMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
