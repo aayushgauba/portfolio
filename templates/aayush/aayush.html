@@ -788,10 +788,34 @@
             border-radius: 8px;
             padding: 2rem;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            opacity: 1;
-            transform: none;
+            opacity: 0;
+            transform: translateY(20px);
             position: relative;
             overflow: hidden;
+        }
+
+        .talk-card.animated {
+            animation: fadeIn 0.8s ease forwards;
+        }
+
+        .talk-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px -15px rgba(255, 61, 0, 0.3);
+        }
+
+        .talk-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 0;
+            background: linear-gradient(to bottom, #ff3d00, #ff9e80);
+            transition: height 0.3s ease;
+        }
+
+        .talk-card:hover::before {
+            height: 100%;
         }
 
         .talk-title {
@@ -1039,6 +1063,11 @@
             
             // Observe paper cards
             document.querySelectorAll('.paper-card').forEach(card => {
+                observer.observe(card);
+            });
+
+            // Observe talk cards
+            document.querySelectorAll('.talk-card').forEach(card => {
                 observer.observe(card);
             });
             
